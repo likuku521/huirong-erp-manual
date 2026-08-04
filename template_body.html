@@ -1,39 +1,45 @@
 <body>
 
-<!-- ═══ HEADER ═══ -->
-<div class="header">
-  <h1>慧镕科技 · 金蝶云星空ERP</h1>
-  <span class="meta">最终用户操作手册 · 亮色紧凑版 __VERSION__ · __DATE__</span>
+<!-- ═══ LANDING 入口选择 ═══ -->
+<div id="landing">
+  <div class="landing-header">
+    <div class="company">HUI RONG TECH</div>
+    <h1>慧镕科技 · 金蝶云星空ERP</h1>
+    <div class="subtitle">最终用户操作手册 · 亮色紧凑版</div>
+    <div class="divider"></div>
+  </div>
+  <div class="role-cards" id="landingCards"></div>
 </div>
 
-<!-- ═══ LAYOUT ═══ -->
-<div class="layout">
+<!-- ═══ 主应用 ═══ -->
+<div id="app">
 
-<!-- ═══ SIDEBAR ═══ -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-search">
-    <input type="text" id="q" placeholder="搜索单据、操作、流程…" autocomplete="off">
-    <div class="search-results" id="searchResults"></div>
+  <!-- 顶栏 -->
+  <div class="top-bar">
+    <button class="back-btn" id="backBtn" title="返回上一级">←</button>
+    <span class="title" id="topTitle">慧镕科技 · 操作手册</span>
+    <span class="home-link" onclick="goHome()">🏠 首页</span>
+    <span class="role-badge" id="roleBadge">📋 全部</span>
+    <div class="search-box">
+      <input type="text" id="q" placeholder="搜索单据、操作、流程…" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
   </div>
-  <div class="role-tabs" id="roleTabs">
-    <div class="role-tab active" data-role="all" onclick="pickRole('all')"><span class="ti">📋</span>全部</div>
-    <div class="role-tab" data-role="ops" onclick="pickRole('ops')"><span class="ti">👤</span>操作人员</div>
-    <div class="role-tab" data-role="fin" onclick="pickRole('fin')"><span class="ti">💰</span>财务人员</div>
-    <div class="role-tab" data-role="lead" onclick="pickRole('lead')"><span class="ti">📊</span>领导层</div>
-  </div>
-  <div class="sidebar-tree" id="navRoot"></div>
-</aside>
 
-<!-- ═══ CONTENT ═══ -->
-<div class="content-wrap">
-  <div class="breadcrumb" id="breadcrumb"><span id="bcText">📖 慧镕科技 · 操作手册</span></div>
-  <div class="content" id="mainContent"></div>
+  <div class="content-wrapper">
+    <!-- 侧边导航 -->
+    <nav class="sidebar" id="sidebar">
+      <div id="navRoot"></div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="main-content" id="mainContent"></main>
+  </div>
+
   <div class="pager" id="pager">
     <button id="prevBtn" disabled onclick="goPrev()">← 上一节</button>
     <button id="nextBtn" onclick="goNext()">下一节 →</button>
   </div>
-</div>
-
 </div>
 
 <button class="sidebar-toggle" id="sidebarToggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>

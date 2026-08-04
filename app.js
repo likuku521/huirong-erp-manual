@@ -1,25 +1,56 @@
-/* ===== 交互层 ===== */
+/* ===== 数据 ===== */
+function findDoc(id){
+  var found=null;
+  SCENES.forEach(function(sc){sc.docs.forEach(function(d){if(d.id===id)found={scene:sc,doc:d};});});
+  return found;
+}
+
+/* ===== LANDING 入口选择 ===== */
+var LANDING_CARDS=[
+  {role:'ops',icon:'👤',t:'操作人员',d:'生产计划、采购、仓库、销售、质检业务操作',count:'21张单据 · 生产/采购/销售'},
+  {role:'fin',icon:'💰',t:'财务人员',d:'成本核算、资产验收、关衡对接',count:'9张单据 · 成本/关衡'},
+  {role:'lead',icon:'📊',t:'领导层',d:'五大场景总览、业务规则、风险控制',count:'5大场景全景'},
+  {role:'all',icon:'📋',t:'全部内容',d:'浏览全部26张单据与完整手册',count:'全部26张单据'}
+];
+function renderLanding(){
+  var h='';
+  LANDING_CARDS.forEach(function(c){
+    h+='<div class="role-card" onclick="enterApp(\''+c.role+'\')">'
+      +'<div class="role-icon">'+c.icon+'</div><h3>'+c.t+'</h3><p>'+c.d+'</p>'
+      +'<div class="module-count">'+c.count+'</div></div>';
+  });
+  document.getElementById('landingCards').innerHTML=h;
+}
+function enterApp(role){
+  CURRENT_ROLE=role;
+  try{localStorage.setItem('glwd_role',role)}catch(e){}
+  document.getElementById('landing').style.display='none';
+  document.getElementById('app').style.display='block';
+  boot();
+  go('home');
+}
+
+/* ===== 启动 ===== */
 function boot(){
-  var saved=null;try{saved=localStorage.getItem('glwd_role')}catch(e){}
-  if(saved==='all'||saved==='ops'||saved==='fin'||saved==='lead')CURRENT_ROLE=saved;
-  else CURRENT_ROLE='all';
-  document.querySelectorAll('#roleTabs .role-tab').forEach(function(t){t.classList.toggle('active',t.dataset.role===CURRENT_ROLE)});
+  document.getElementById('roleBadge').className='role-badge rb-'+CURRENT_ROLE;
+  var names={all:'📋 全部',ops:'👤 操作人员',fin:'💰 财务人员',lead:'📊 领导层'};
+  document.getElementById('roleBadge').textContent=names[CURRENT_ROLE];
   buildNav();renderContent('home');route();
   window.addEventListener('hashchange',route);
   document.getElementById('q').addEventListener('input',onSearch);
-  document.addEventListener('click',function(e){if(!e.target.closest('.sidebar-search'))document.getElementById('searchResults').classList.remove('active')});
-  window.addEventListener('scroll',function(){document.getElementById('btt').classList.toggle('show',window.scrollY>300)});
+  document.getElementById('backBtn').addEventListener('click',goBack);
+  document.addEventListener('click',function(e){if(!e.target.closest('.search-box'))document.getElementById('searchResults').classList.remove('active')});
+  window.addEventListener('scroll',function(){var b=document.getElementById('btt');if(b)b.classList.toggle('show',window.scrollY>300)});
   initRipple();
 }
-window.addEventListener('DOMContentLoaded',boot);
-
-/* ===== 角色切换 ===== */
-function pickRole(r){
-  CURRENT_ROLE=r;try{localStorage.setItem('glwd_role',r)}catch(e){}
-  document.querySelectorAll('#roleTabs .role-tab').forEach(function(t){t.classList.toggle('active',t.dataset.role===r)});
-  buildNav();renderContent('home');go('home');
-}
+function goHome(){go('home');}
 function go(h){location.hash='#/'+h.replace(/^\//,'');}
+function goBack(){
+  var h=location.hash.replace('#/','')||'home';
+  if(h.match(/^doc-/)){var f=findDoc(h.replace('doc-',''));if(f)go('sc'+f.scene.no);}
+  else if(h.match(/^sc\d+$/))go('home');
+  else history.back();
+}
 function goPrev(){var cur=location.hash.replace('#/','')||'home';var idx=-1;for(var i=0;i<ALL_NAV.length;i++)if(ALL_NAV[i].k===cur){idx=i;break}if(idx>0)go(ALL_NAV[idx-1].k);}
 function goNext(){var cur=location.hash.replace('#/','')||'home';var idx=-1;for(var i=0;i<ALL_NAV.length;i++)if(ALL_NAV[i].k===cur){idx=i;break}if(idx>=0&&idx<ALL_NAV.length-1)go(ALL_NAV[idx+1].k);}
 
@@ -27,19 +58,21 @@ function goNext(){var cur=location.hash.replace('#/','')||'home';var idx=-1;for(
 function route(){
   var h=location.hash.replace('#/','')||'home';
   renderContent(h);
-  var bc='📖 <b>慧镕科技 · 操作手册</b>';
-  if(h!=='home'&&h.match(/^sc\d+$/)){
+  /* 顶栏标题 + 返回按钮 */
+  var backBtn=document.getElementById('backBtn');
+  var title='慧镕科技 · 操作手册';
+  if(h.match(/^sc\d+$/)){
     var sc=SCENES.filter(function(x){return x.no===parseInt(h.replace('sc',''))})[0];
-    if(sc)bc+=' › 场景'+sc.no+' '+sc.title;
+    if(sc){title=sc.icon+' 场景'+sc.no+'：'+sc.title;backBtn.style.display='flex';}
   }else if(h.match(/^doc-/)){
-    var found=null;
-    SCENES.forEach(function(sc2){sc2.docs.forEach(function(d){if(d.id===h.replace('doc-',''))found={scene:sc2,doc:d};});});
-    if(found)bc+=' › '+found.scene.title+' › '+found.doc.no+' '+found.doc.title;
-  }else if(h==='flows')bc+=' › 业务流程总览';
-  else if(h==='shots')bc+=' › 截图清单';
-  else if(h==='about')bc+=' › 关于';
-  document.getElementById('bcText').innerHTML=bc;
-  document.querySelectorAll('.tree-h, .tree-sub').forEach(function(a){a.classList.remove('active')});
+    var f=findDoc(h.replace('doc-',''));
+    if(f){title=f.doc.no+' '+f.doc.title;backBtn.style.display='flex';}
+  }else if(h==='flows'){title='🔄 业务流程总览';backBtn.style.display='flex';}
+  else if(h==='shots'){title='📷 截图清单';backBtn.style.display='flex';}
+  else if(h==='about'){title='ℹ️ 关于';backBtn.style.display='flex';}
+  else{title='慧镕科技 · 操作手册';backBtn.style.display='none';}
+  document.getElementById('topTitle').textContent=title;
+  document.querySelectorAll('.nav-item').forEach(function(a){a.classList.remove('active')});
   var el=document.querySelector('[data-nav="'+h+'"]');
   if(el)el.classList.add('active');
   var idx=-1;for(var i=0;i<ALL_NAV.length;i++)if(ALL_NAV[i].k===h){idx=i;break}
@@ -47,51 +80,59 @@ function route(){
   document.getElementById('nextBtn').disabled=idx>=ALL_NAV.length-1;
 }
 
-/* ===== 树导航（场景→单据两级） ===== */
+/* ===== 导航（分组平铺） ===== */
 var ALL_NAV=[];
 function buildNav(){
   var role=CURRENT_ROLE,items=[],all=[];
-  items.push({t:'首页',k:'home',type:'h'});
+  items.push({t:'首页',ic:'🏠',k:'home',badge:''});
   all.push({t:'首页',k:'home'});
   function addScene(sc){
-    items.push({t:'场景'+sc.no+' '+sc.title+'（'+sc.docs.length+'单据）',k:'sc'+sc.no,type:'h'});
+    items.push({t:sc.title,ic:sc.icon,k:'sc'+sc.no,badge:sc.docs.length+'单据'});
     all.push({t:sc.title,k:'sc'+sc.no});
     sc.docs.forEach(function(d){
-      items.push({t:d.no+' '+d.title,k:'doc-'+d.id,type:'sub'});
+      items.push({t:d.no+' '+d.title,ic:'▫',k:'doc-'+d.id,badge:(d.shots||[]).length?'📷'+d.shots.length:''});
       all.push({t:d.title,k:'doc-'+d.id});
     });
   }
   if(role==='ops'){
-    items.push({t:'采购与生产',k:'',type:'group'});
+    items.push({t:'生产与采购',ic:'',k:'',badge:'',grp:1});
     SCENES.forEach(function(sc){if(sc.no<=2)addScene(sc);});
-    items.push({t:'销售',k:'',type:'group'});
+    items.push({t:'销售',ic:'',k:'',badge:'',grp:1});
     SCENES.forEach(function(sc){if(sc.no===3)addScene(sc);});
   }else if(role==='fin'){
-    items.push({t:'采购与成本',k:'',type:'group'});
+    items.push({t:'采购与成本',ic:'',k:'',badge:'',grp:1});
     SCENES.forEach(function(sc){if(sc.no===1||sc.no===4||sc.no===5)addScene(sc);});
   }else if(role==='lead'){
-    items.push({t:'五大场景',k:'',type:'group'});
-    SCENES.forEach(function(sc){items.push({t:'场景'+sc.no+' '+sc.title,k:'sc'+sc.no,type:'h'});all.push({t:sc.title,k:'sc'+sc.no});});
+    items.push({t:'五大场景',ic:'',k:'',badge:'',grp:1});
+    SCENES.forEach(function(sc){
+      items.push({t:'场景'+sc.no+' '+sc.title,ic:sc.icon,k:'sc'+sc.no,badge:''});
+      all.push({t:sc.title,k:'sc'+sc.no});
+    });
   }else{
     SCENES.forEach(function(sc){
-      items.push({t:'场景'+sc.no+' '+sc.title,k:'',type:'group'});
+      items.push({t:'场景'+sc.no+' '+sc.title,ic:'',k:'',badge:'',grp:1});
       addScene(sc);
     });
   }
-  items.push({t:'速查',k:'',type:'group'});
-  [{t:'业务流程总览',k:'flows'},{t:'截图清单',k:'shots'},{t:'关于',k:'about'}].forEach(function(it){items.push({t:it.t,k:it.k,type:'sub'});all.push({t:it.t,k:it.k});});
+  items.push({t:'速查',ic:'',k:'',badge:'',grp:1});
+  [{t:'业务流程总览',ic:'🔄',k:'flows',badge:''},{t:'截图清单',ic:'📷',k:'shots',badge:'45处'},{t:'关于',ic:'ℹ️',k:'about',badge:''}].forEach(function(it){items.push({t:it.t,ic:it.ic,k:it.k,badge:it.badge});all.push({t:it.t,k:it.k});});
   ALL_NAV=all;
   var h='',inGroup=false;
   items.forEach(function(it){
-    if(it.type==='group'){if(inGroup)h+='</div>';h+='<div class="tree-group"><div class="tree-h open" onclick="this.classList.toggle(\'open\')"><span class="arrow">▶</span>'+esc(it.t)+'</div><div class="tree-subs">';inGroup=true;}
-    else if(it.type==='sub')h+='<div class="tree-sub" data-nav="'+esc(it.k)+'" onclick="go(\''+esc(it.k)+'\')">'+esc(it.t)+'</div>';
-    else h+='<div class="tree-h" data-nav="'+esc(it.k)+'" onclick="go(\''+esc(it.k)+'\')">'+esc(it.t)+'</div>';
+    if(it.grp){if(inGroup)h+='</div>';h+='<div class="nav-group"><div class="nav-group-title">'+esc(it.t)+'</div>';inGroup=true;}
+    else{
+      h+='<div class="nav-item" data-nav="'+esc(it.k)+'" onclick="go(\''+esc(it.k)+'\')">'
+        +(it.ic?'<span class="nav-icon">'+it.ic+'</span>':'')
+        +esc(it.t)
+        +(it.badge?'<span class="nav-badge'+(it.badge.indexOf('📷')>=0?' b-hot':'')+'">'+esc(it.badge)+'</span>':'')
+        +'</div>';
+    }
   });
-  if(inGroup)h+='</div></div>';
+  if(inGroup)h+='</div>';
   document.getElementById('navRoot').innerHTML=h;
 }
 
-/* ===== 搜索（下拉面板） ===== */
+/* ===== 搜索 ===== */
 function hl(t,q){t=esc(t);return t.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>')}
 function onSearch(){
   var q=document.getElementById('q').value.trim().toLowerCase();
@@ -104,7 +145,7 @@ function onSearch(){
       var full=f.text||'';
       var sIdx=Math.max(0,full.toLowerCase().indexOf(q)-16);
       var snippet=full.substring(sIdx,sIdx+78)+(sIdx+78<full.length?'…':'');
-      matches.push({id:f.id,title:f.title,path:'第'+f.ch+'章',snippet:snippet});
+      matches.push({id:f.id,title:f.title,path:f.path,snippet:snippet});
     }
   });
   if(matches.length){
@@ -115,12 +156,12 @@ function onSearch(){
         +'<div class="sr-snippet">'+hl(m.snippet,q)+'</div></div>';
     }).join('');
   }else{
-    box.innerHTML='<div class="search-result-item"><div class="sr-title" style="color:var(--text2)">没找到相关的，换个关键词试试？</div></div>';
+    box.innerHTML='<div class="search-result-item"><div class="sr-title" style="color:var(--m-text-light)">没找到相关的，换个关键词试试？</div></div>';
   }
   box.classList.add('active');
 }
 
-/* ===== 截图上传（保留） ===== */
+/* ===== 截图上传 ===== */
 var _shotPending=null;
 function uploadShot(no){_shotPending=no;document.getElementById('shotFileInput').click()}
 function replaceShot(no){_shotPending=no;document.getElementById('shotFileInput').click()}
@@ -154,3 +195,12 @@ function initRipple(){
     setTimeout(function(){rip.remove()},550);
   });
 }
+
+/* ===== 启动入口：landing 优先 ===== */
+window.addEventListener('DOMContentLoaded',function(){
+  renderLanding();
+  var saved=null;try{saved=localStorage.getItem('glwd_role')}catch(e){}
+  if(saved==='ops'||saved==='fin'||saved==='lead'||saved==='all'){
+    enterApp(saved);
+  }
+});
