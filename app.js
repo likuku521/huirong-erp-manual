@@ -100,46 +100,37 @@ function route(){
   document.getElementById('nextBtn').disabled=idx>=ALL_NAV.length-1;
 }
 
-/* ===== 导航（分组平铺） ===== */
+/* ===== 导航（场景分组 = 一级，单据名 = 二级） ===== */
 var ALL_NAV=[];
 function buildNav(){
   var role=CURRENT_ROLE,items=[],all=[];
-  items.push({t:'首页',ic:'🏠',k:'home',badge:''});
+  items.push({t:'首页',ic:'🏠',k:'home',badge:'',grp:false});
   all.push({t:'首页',k:'home'});
-  function addScene(sc){
-    items.push({t:sc.title,ic:sc.icon,k:'sc'+sc.no,badge:sc.docs.length+'单据'});
+  function addScene(sc,showDocs){
+    items.push({t:sc.icon+' '+sc.title,k:'sc'+sc.no,badge:'',grp:true,clickable:true});
     all.push({t:sc.title,k:'sc'+sc.no});
-    sc.docs.forEach(function(d){
-      items.push({t:d.no+' '+d.title,ic:'▫',k:'doc-'+d.id,badge:(d.shots||[]).length?'📷'+d.shots.length:''});
-      all.push({t:d.title,k:'doc-'+d.id});
-    });
+    if(showDocs){
+      sc.docs.forEach(function(d){
+        items.push({t:d.title,ic:'▫',k:'doc-'+d.id,badge:(d.shots||[]).length?'📷'+d.shots.length:'',grp:false});
+        all.push({t:d.title,k:'doc-'+d.id});
+      });
+    }
   }
-  if(role==='ops'){
-    items.push({t:'生产与采购',ic:'',k:'',badge:'',grp:1});
-    SCENES.forEach(function(sc){if(sc.no<=2)addScene(sc);});
-    items.push({t:'销售',ic:'',k:'',badge:'',grp:1});
-    SCENES.forEach(function(sc){if(sc.no===3)addScene(sc);});
-  }else if(role==='fin'){
-    items.push({t:'采购与成本',ic:'',k:'',badge:'',grp:1});
-    SCENES.forEach(function(sc){if(sc.no===1||sc.no===4||sc.no===5)addScene(sc);});
-  }else if(role==='lead'){
-    items.push({t:'五大场景',ic:'',k:'',badge:'',grp:1});
-    SCENES.forEach(function(sc){
-      items.push({t:'场景'+sc.no+' '+sc.title,ic:sc.icon,k:'sc'+sc.no,badge:''});
-      all.push({t:sc.title,k:'sc'+sc.no});
-    });
-  }else{
-    SCENES.forEach(function(sc){
-      items.push({t:'场景'+sc.no+' '+sc.title,ic:'',k:'',badge:'',grp:1});
-      addScene(sc);
-    });
-  }
-  items.push({t:'速查',ic:'',k:'',badge:'',grp:1});
-  [{t:'业务流程总览',ic:'🔄',k:'flows',badge:''},{t:'截图清单',ic:'📷',k:'shots',badge:'45处'},{t:'关于',ic:'ℹ️',k:'about',badge:''}].forEach(function(it){items.push({t:it.t,ic:it.ic,k:it.k,badge:it.badge});all.push({t:it.t,k:it.k});});
+  var order=[];
+  if(role==='ops')order=[1,2,3];
+  else if(role==='fin')order=[1,4,5];
+  else if(role==='lead')order=[1,2,3,4,5];
+  else order=[1,2,3,4,5];
+  order.forEach(function(no){
+    var sc=SCENES.filter(function(x){return x.no===no})[0];
+    if(sc)addScene(sc,role!=='lead');
+  });
+  items.push({t:'速查',ic:'',k:'',badge:'',grp:true});
+  [{t:'业务流程总览',ic:'🔄',k:'flows',badge:''},{t:'截图清单',ic:'📷',k:'shots',badge:'45处'},{t:'关于',ic:'ℹ️',k:'about',badge:''}].forEach(function(it){items.push({t:it.t,ic:it.ic,k:it.k,badge:it.badge,grp:false});all.push({t:it.t,k:it.k});});
   ALL_NAV=all;
   var h='',inGroup=false;
   items.forEach(function(it){
-    if(it.grp){if(inGroup)h+='</div>';h+='<div class="nav-group"><div class="nav-group-title">'+esc(it.t)+'</div>';inGroup=true;}
+    if(it.grp){if(inGroup)h+='</div>';h+='<div class="nav-group"><div class="nav-group-title'+(it.clickable?' clickable':'')+'"'+(it.clickable?' onclick="go(\''+esc(it.k)+'\')"':'')+'>'+esc(it.t)+(it.clickable?' <span style="font-size:9px;opacity:.5">→</span>':'')+'</div>';inGroup=true;}
     else{
       h+='<div class="nav-item" data-nav="'+esc(it.k)+'" onclick="go(\''+esc(it.k)+'\')">'
         +(it.ic?'<span class="nav-icon">'+it.ic+'</span>':'')
