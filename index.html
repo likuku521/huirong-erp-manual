@@ -567,12 +567,16 @@ function initRipple(){
   });
 }
 
-/* ===== 启动入口：landing 优先 ===== */
+/* ===== 启动入口：始终先显示 landing 选择页 ===== */
 window.addEventListener('DOMContentLoaded',function(){
   renderLanding();
+  /* 高亮上次选择的角色卡（提示记忆，但不自动进入） */
   var saved=null;try{saved=localStorage.getItem('glwd_role')}catch(e){}
   if(saved==='ops'||saved==='fin'||saved==='lead'||saved==='all'){
-    enterApp(saved);
+    document.querySelectorAll('.role-card').forEach(function(c){
+      var r=c.getAttribute('onclick').match(/'(\w+)'/)[1];
+      if(r===saved){c.style.outline='2px solid var(--m-primary)';c.style.outlineOffset='2px';}
+    });
   }
 });
 </script>
