@@ -19,7 +19,17 @@
     <button class="back-btn" id="backBtn" title="返回上一级">←</button>
     <span class="title" id="topTitle">慧镕科技 · 操作手册</span>
     <span class="home-link" onclick="goHome()">🏠 首页</span>
-    <span class="role-badge" id="roleBadge">📋 全部</span>
+    <div class="role-switch">
+      <span class="role-badge" id="roleBadge" onclick="toggleRoleMenu()">📋 全部 ▾</span>
+      <div class="role-menu" id="roleMenu">
+        <div class="role-menu-title">切换身份视角</div>
+        <div class="role-menu-item" data-role="all" onclick="switchRole('all')">📋 全部内容</div>
+        <div class="role-menu-item" data-role="ops" onclick="switchRole('ops')">👤 操作人员</div>
+        <div class="role-menu-item" data-role="fin" onclick="switchRole('fin')">💰 财务人员</div>
+        <div class="role-menu-item" data-role="lead" onclick="switchRole('lead')">📊 领导层</div>
+        <div class="role-menu-item sep" onclick="enterApp(CURRENT_ROLE)">🏠 返回入口页</div>
+      </div>
+    </div>
     <div class="search-box">
       <input type="text" id="q" placeholder="搜索单据、操作、流程…" autocomplete="off">
       <div class="search-results" id="searchResults"></div>

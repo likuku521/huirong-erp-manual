@@ -32,16 +32,36 @@ function enterApp(role){
 
 /* ===== 启动 ===== */
 function boot(){
-  document.getElementById('roleBadge').className='role-badge rb-'+CURRENT_ROLE;
-  var names={all:'📋 全部',ops:'👤 操作人员',fin:'💰 财务人员',lead:'📊 领导层'};
-  document.getElementById('roleBadge').textContent=names[CURRENT_ROLE];
+  updateRoleBadge();
   buildNav();renderContent('home');route();
   window.addEventListener('hashchange',route);
   document.getElementById('q').addEventListener('input',onSearch);
   document.getElementById('backBtn').addEventListener('click',goBack);
-  document.addEventListener('click',function(e){if(!e.target.closest('.search-box'))document.getElementById('searchResults').classList.remove('active')});
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('.search-box'))document.getElementById('searchResults').classList.remove('active');
+    if(!e.target.closest('.role-switch'))document.getElementById('roleMenu').classList.remove('open');
+  });
   window.addEventListener('scroll',function(){var b=document.getElementById('btt');if(b)b.classList.toggle('show',window.scrollY>300)});
   initRipple();
+}
+function updateRoleBadge(){
+  var names={all:'📋 全部',ops:'👤 操作人员',fin:'💰 财务人员',lead:'📊 领导层'};
+  var b=document.getElementById('roleBadge');
+  b.className='role-badge rb-'+CURRENT_ROLE;
+  b.textContent=names[CURRENT_ROLE]+' ▾';
+  document.querySelectorAll('.role-menu-item[data-role]').forEach(function(m){
+    m.style.background=m.dataset.role===CURRENT_ROLE?'var(--m-hover)':'';
+    m.style.fontWeight=m.dataset.role===CURRENT_ROLE?'600':'';
+  });
+}
+function toggleRoleMenu(){document.getElementById('roleMenu').classList.toggle('open');}
+function switchRole(r){
+  CURRENT_ROLE=r;
+  try{localStorage.setItem('glwd_role',r)}catch(e){}
+  document.getElementById('roleMenu').classList.remove('open');
+  updateRoleBadge();
+  buildNav();
+  go('home');
 }
 function goHome(){go('home');}
 function go(h){location.hash='#/'+h.replace(/^\//,'');}
