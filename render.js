@@ -63,6 +63,7 @@ function renderDoc(sc, d){
     +'<div class="back-link" onclick="go(\'sc'+sc.no+'\')">← 返回 '+esc(sc.title)+' 场景</div>'
     +'<h2>'+esc(d.no)+' '+esc(d.title)+'</h2>';
   h+='<div class="crumb-inline" style="font-size:11.5px;color:var(--m-text-light);margin-bottom:6px">'+esc(sc.icon)+' '+esc(sc.title)+' › '+esc(d.title)+'</div>';
+  if(d.posts&&d.posts.length)h+='<div style="margin-bottom:6px">'+d.posts.map(function(p){return'<span class="path" style="margin-right:4px;margin-bottom:4px">👤 '+esc(p)+'</span>'}).join('')+'</div>';
   if(d.desc)h+='<p style="font-size:12.5px">'+esc(d.desc)+'</p>';
   if(d.rules&&d.rules.length)h+='<h3>📏 业务规则</h3>'+bullets(d.rules);
   if(d.steps&&d.steps.length){
@@ -81,10 +82,31 @@ function renderDoc(sc, d){
 
 /* ===== 角色 ===== */
 var CURRENT_ROLE='all';
+var CURRENT_POST=''; /* 操作人员的岗位细分 */
 var ROLE_DEF={all:{name:'全部',icon:'📋'},ops:{name:'操作人员',icon:'👤'},fin:{name:'财务人员',icon:'💰'},lead:{name:'领导层',icon:'📊'}};
 
+/* ===== 岗位工作台（操作人员选定岗位后） ===== */
+function getPostDocs(postName){
+  var docs=[];
+  SCENES.forEach(function(sc){sc.docs.forEach(function(d){if((d.posts||[]).indexOf(postName)>=0)docs.push({scene:sc,doc:d});});});
+  return docs;
+}
+function renderPostHome(){
+  var docs=getPostDocs(CURRENT_POST);
+  var h='<div class="c-section"><h2>👤 '+esc(CURRENT_POST)+' 工作台</h2>';
+  h+='<p class="page-desc">以下 '+docs.length+' 张单据与你相关。点击查看操作步骤。</p>';
+  h+='<table><thead><tr><th>单据</th><th>所属场景</th><th>说明</th><th style="width:80px">操作</th></tr></thead><tbody>';
+  docs.forEach(function(o){
+    h+='<tr><td><b>'+esc(o.doc.title)+'</b></td><td style="font-size:11.5px;color:var(--m-text-light)">'+esc(o.scene.title)+'</td>'
+      +'<td style="font-size:11.5px;color:var(--m-text-light)">'+esc((o.doc.desc||'').slice(0,40))+'…</td>'
+      +'<td><button class="qbtn" onclick="go(\'doc-'+esc(o.doc.id)+'\')">进入 →</button></td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
 /* ===== 首页（大场景总览） ===== */
 function renderHome(){
+  if(CURRENT_ROLE==='ops'&&CURRENT_POST)return renderPostHome();
   var h='<div class="c-section"><h2>📋 慧镕科技 · 金蝶云星空ERP 操作手册</h2>';
   h+='<p style="font-size:12.5px;color:var(--m-text-light)">'+esc(META.notice)+'</p>';
   h+='<h3>🗺️ 业务全景 · 五大场景</h3>';

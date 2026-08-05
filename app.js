@@ -6,24 +6,42 @@ function findDoc(id){
 }
 
 /* ===== LANDING 入口选择 ===== */
+var CURRENT_POST=''; // 岗位（操作人员细分）
 var LANDING_CARDS=[
-  {role:'ops',icon:'👤',t:'操作人员',d:'生产计划、采购、仓库、销售、质检业务操作',count:'21张单据 · 生产/采购/销售'},
-  {role:'fin',icon:'💰',t:'财务人员',d:'成本核算、资产验收、关衡对接',count:'9张单据 · 成本/关衡'},
-  {role:'lead',icon:'📊',t:'领导层',d:'五大场景总览、业务规则、风险控制',count:'5大场景全景'},
+  {role:'ops',icon:'👤',t:'操作人员',d:'按岗位细分：计划、采购、仓库、质检、工艺、销售、关务等',count:'11个岗位 · 点击选择'},
+  {role:'fin',icon:'💰',t:'财务人员',d:'成本核算、预付款、应付款、应收、资产入账',count:'9张单据 · 成本/采购结算'},
+  {role:'lead',icon:'📊',t:'领导层',d:'审批、决策、验收、管理类角色',count:'33步 · 审批决策'},
   {role:'all',icon:'📋',t:'全部内容',d:'浏览全部26张单据与完整手册',count:'全部26张单据'}
 ];
 function renderLanding(){
   var h='';
   LANDING_CARDS.forEach(function(c){
-    h+='<div class="role-card" onclick="enterApp(\''+c.role+'\')">'
+    var click=c.role==='ops'?"showPostSelect()":"enterApp('"+c.role+"')";
+    h+='<div class="role-card" onclick="'+click+'">'
       +'<div class="role-icon">'+c.icon+'</div><h3>'+c.t+'</h3><p>'+c.d+'</p>'
       +'<div class="module-count">'+c.count+'</div></div>';
   });
   document.getElementById('landingCards').innerHTML=h;
+  renderPostSelect();
 }
-function enterApp(role){
+/* 岗位选择层 */
+function renderPostSelect(){
+  var h='<div class="post-select" id="postSelect" style="display:none">';
+  h+='<div class="post-head"><button class="back-link" onclick="hidePostSelect()">← 返回</button><h2>👤 操作人员 · 请选择你的岗位</h2></div>';
+  h+='<div class="post-grid">';
+  h+='<div class="post-card" onclick="enterApp(\'ops\')"><div class="role-icon" style="background:#E8F0E8">🌟</div><h3>全部岗位</h3><p>查看操作人员全部21张单据</p></div>';
+  DATA.posts.forEach(function(p){
+    h+='<div class="post-card" onclick="enterApp(\'ops\',\''+p.t+'\')"><div class="role-icon" style="background:#E3F2E8">'+p.ic+'</div><h3>'+p.t+'</h3><p>'+p.d+'</p></div>';
+  });
+  h+='</div></div>';
+  document.getElementById('landingCards').insertAdjacentHTML('afterend',h);
+}
+function showPostSelect(){document.getElementById('postSelect').style.display='block';}
+function hidePostSelect(){document.getElementById('postSelect').style.display='none';}
+function enterApp(role,post){
   CURRENT_ROLE=role;
-  try{localStorage.setItem('glwd_role',role)}catch(e){}
+  CURRENT_POST=post||'';
+  try{localStorage.setItem('glwd_role',role);localStorage.setItem('glwd_post',post||'')}catch(e){}
   document.getElementById('landing').style.display='none';
   document.getElementById('app').style.display='block';
   boot();
@@ -32,6 +50,9 @@ function enterApp(role){
 
 /* ===== 启动 ===== */
 function boot(){
+  var savedPost=null;try{savedPost=localStorage.getItem('glwd_post')}catch(e){}
+  if(CURRENT_ROLE==='ops')CURRENT_POST=savedPost||'';
+  else CURRENT_POST='';
   updateRoleBadge();
   buildNav();renderContent('home');route();
   window.addEventListener('hashchange',route);
@@ -48,20 +69,33 @@ function updateRoleBadge(){
   var names={all:'📋 全部',ops:'👤 操作人员',fin:'💰 财务人员',lead:'📊 领导层'};
   var b=document.getElementById('roleBadge');
   b.className='role-badge rb-'+CURRENT_ROLE;
-  b.textContent=names[CURRENT_ROLE]+' ▾';
+  b.textContent=names[CURRENT_ROLE]+(CURRENT_POST?' · '+CURRENT_POST:'')+' ▾';
   document.querySelectorAll('.role-menu-item[data-role]').forEach(function(m){
     m.style.background=m.dataset.role===CURRENT_ROLE?'var(--m-hover)':'';
     m.style.fontWeight=m.dataset.role===CURRENT_ROLE?'600':'';
   });
+  var postLine=document.getElementById('roleMenuPost');
+  if(postLine)postLine.style.display=(CURRENT_ROLE==='ops')?'block':'none';
+  var pn=document.getElementById('roleMenuPostName');
+  if(pn)pn.textContent=CURRENT_POST||'全部岗位';
 }
 function toggleRoleMenu(){document.getElementById('roleMenu').classList.toggle('open');}
 function switchRole(r){
   CURRENT_ROLE=r;
-  try{localStorage.setItem('glwd_role',r)}catch(e){}
+  if(r!=='ops')CURRENT_POST='';
+  try{localStorage.setItem('glwd_role',r);if(r!=='ops')localStorage.removeItem('glwd_post')}catch(e){}
   document.getElementById('roleMenu').classList.remove('open');
   updateRoleBadge();
   buildNav();
   go('home');
+}
+function switchPostFromApp(){
+  /* 从应用内切换岗位：回到landing岗位选择 */
+  try{localStorage.removeItem('glwd_post')}catch(e){}
+  document.getElementById('app').style.display='none';
+  document.getElementById('landing').style.display='flex';
+  document.getElementById('postSelect').style.display='block';
+  document.querySelectorAll('.landing-header,.role-cards').forEach(function(e){e.style.display='none'});
 }
 function goHome(){go('home');}
 function go(h){location.hash='#/'+h.replace(/^\//,'');}
@@ -110,21 +144,43 @@ function buildNav(){
     items.push({t:sc.icon+' '+sc.title,k:'sc'+sc.no,badge:'',grp:true,clickable:true});
     all.push({t:sc.title,k:'sc'+sc.no});
     if(showDocs){
-      sc.docs.forEach(function(d){
-        items.push({t:d.title,ic:'▫',k:'doc-'+d.id,badge:(d.shots||[]).length?'📷'+d.shots.length:'',grp:false});
-        all.push({t:d.title,k:'doc-'+d.id});
-      });
+      var docs=sc.docs;
+      if(role==='ops'&&CURRENT_POST){
+        docs=sc.docs.filter(function(d){return (d.posts||[]).indexOf(CURRENT_POST)>=0;});
+      }
+      if(docs.length){
+        docs.forEach(function(d){
+          items.push({t:d.title,ic:'▫',k:'doc-'+d.id,badge:(d.shots||[]).length?'📷'+d.shots.length:'',grp:false});
+          all.push({t:d.title,k:'doc-'+d.id});
+        });
+      }else{
+        items.push({t:'（本岗位无此场景单据）',ic:'·',k:'sc'+sc.no,badge:'',grp:false});
+      }
     }
   }
-  var order=[];
-  if(role==='ops')order=[1,2,3];
-  else if(role==='fin')order=[1,4,5];
-  else if(role==='lead')order=[1,2,3,4,5];
-  else order=[1,2,3,4,5];
-  order.forEach(function(no){
-    var sc=SCENES.filter(function(x){return x.no===no})[0];
-    if(sc)addScene(sc,role!=='lead');
-  });
+  if(role==='ops'){
+    var order=[1,2,3];
+    order.forEach(function(no){
+      var sc=SCENES.filter(function(x){return x.no===no})[0];
+      if(sc)addScene(sc,true);
+    });
+  }else if(role==='fin'){
+    var order=[1,4,5];
+    order.forEach(function(no){
+      var sc=SCENES.filter(function(x){return x.no===no})[0];
+      if(sc)addScene(sc,true);
+    });
+  }else if(role==='lead'){
+    [1,2,3,4,5].forEach(function(no){
+      var sc=SCENES.filter(function(x){return x.no===no})[0];
+      if(sc)addScene(sc,false);
+    });
+  }else{
+    [1,2,3,4,5].forEach(function(no){
+      var sc=SCENES.filter(function(x){return x.no===no})[0];
+      if(sc)addScene(sc,true);
+    });
+  }
   items.push({t:'速查',ic:'',k:'',badge:'',grp:true});
   [{t:'业务流程总览',ic:'🔄',k:'flows',badge:''},{t:'截图清单',ic:'📷',k:'shots',badge:'45处'},{t:'关于',ic:'ℹ️',k:'about',badge:''}].forEach(function(it){items.push({t:it.t,ic:it.ic,k:it.k,badge:it.badge,grp:false});all.push({t:it.t,k:it.k});});
   ALL_NAV=all;

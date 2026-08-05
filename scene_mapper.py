@@ -155,6 +155,33 @@ SCENES = [
   'desc':'进口/出口报关业务在关衡关务系统操作，金蝶同步基础单据。同步后不允许反审核或变更。'},
 ]
 
+# ===== 岗位-单据映射（泳道清单） =====
+POSTS = {
+ 'p-req':['采购员','行政人员'], 'p-order':['采购员','关务专员'], 'p-receipt':['仓库管理员'],
+ 'p-in':['仓库管理员'], 'p-qc':['质检员'], 'p-asset':['仓库管理员','验收组'],
+ 'p-return':['仓库管理员','采购员'], 'p-office':['采购员','行政人员'],
+ 'm-mrp':['计划员'], 'm-mo':['计划员','生产主管'], 'm-pick':['仓库管理员','车间主任','工艺员'],
+ 'm-report':['车间主任','生产主管'], 'm-in':['仓库管理员'], 'm-rework':['工艺员','仓库管理员'],
+ 'm-ecn':['工程工程师','工艺员'], 'm-sort':['计划员','测试员'], 'm-outsource':['采购员','计划员','仓库管理员'],
+ 's-so':['销售员','关务专员'], 's-ship':['销售员'], 's-out':['仓库管理员'], 's-return':['仓库管理员','销售员'],
+ 'c-collect':['成本会计'], 'c-alloc':['成本会计'], 'c-calc':['成本会计'], 'c-carry':['成本会计'],
+ 'g-sync':['关务专员'],
+}
+# 岗位清单与展示
+POST_LIST = [
+ {'k':'planner','t':'计划员','ic':'📅','desc':'MRP运算、生产工单、分拣测试下达'},
+ {'k':'buyer','t':'采购员','ic':'🛒','desc':'采购申请、采购订单、许可证、退料'},
+ {'k':'warehouse','t':'仓库管理员','ic':'📦','desc':'入库、领料、收料、出库、退料'},
+ {'k':'qc','t':'质检员','ic':'🔬','desc':'来料检验、工序检验、分拣作业'},
+ {'k':'craft','t':'工艺员','ic':'📐','desc':'工艺路线、返工工单、ECN调整'},
+ {'k':'sales','t':'销售员','ic':'🤝','desc':'销售订单、发货、退货审批'},
+ {'k':'customs','t':'关务专员','ic':'🌐','desc':'许可证、海关接口、关衡同步'},
+ {'k':'prodmgmt','t':'生产主管','ic':'🏭','desc':'生产BOM、工单执行'},
+ {'k':'workshop','t':'车间主任','ic':'🛠','desc':'车间发料、工序汇报'},
+ {'k':'tester','t':'测试员','ic':'🧪','desc':'测试工序'},
+ {'k':'engineer','t':'工程工程师','ic':'⚙️','desc':'BOM变更'},
+]
+
 def build_doc(d, scene_id):
     steps = []
     for no in d['src']:
@@ -183,7 +210,8 @@ def build_doc(d, scene_id):
         for r in risks_of(no):
             if r not in risks: risks.append(r)
     return {'id': d['id'], 'no': d['no'], 'title': d['title'], 'desc': d['desc'],
-            'steps': steps, 'shots': shots, 'rules': rules, 'risks': risks}
+            'steps': steps, 'shots': shots, 'rules': rules, 'risks': risks,
+            'posts': POSTS.get(d['id'], [])}
 
 scenes = []
 for sc in SCENES:
@@ -194,6 +222,7 @@ for sc in SCENES:
 out = {
     'meta': data['meta'],
     'scenes': scenes,
+    'posts': POST_LIST,
     'appendix': data['appendix']
 }
 json.dump(out, open(os.path.join(BASE, 'data', 'manual.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
