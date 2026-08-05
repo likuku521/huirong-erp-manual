@@ -61,6 +61,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","
 .top-bar .title{font-size:14.5px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top-bar .home-link{font-size:12px;color:var(--m-primary);cursor:pointer;margin-right:12px;white-space:nowrap}
 .top-bar .home-link:hover{text-decoration:underline}
+.entry-link{padding:4px 12px;border:none;border-radius:14px;background:var(--m-primary);color:#fff;font-size:11.5px;cursor:pointer;white-space:nowrap;transition:var(--transition);margin-right:10px}
+.entry-link:hover{background:var(--m-primary-dark)}
 .role-badge{padding:3px 12px;border-radius:16px;font-size:11.5px;font-weight:500;white-space:nowrap;cursor:pointer;transition:var(--transition)}
 .role-badge:hover{box-shadow:0 0 0 2px var(--m-accent2)}
 .rb-all{background:#EDF2E9;color:#4A6B3A}
@@ -218,6 +220,7 @@ tbody tr:hover{background:var(--m-hover)}
     <button class="back-btn" id="backBtn" title="返回上一级">←</button>
     <span class="title" id="topTitle">慧镕科技 · 操作手册</span>
     <span class="home-link" onclick="goHome()">🏠 首页</span>
+    <button class="entry-link" onclick="backToLanding()">↩ 返回入口</button>
     <div class="role-switch">
       <span class="role-badge" id="roleBadge" onclick="toggleRoleMenu()">📋 全部 ▾</span>
       <div class="role-menu" id="roleMenu">
@@ -533,6 +536,21 @@ function switchPostFromApp(){
   document.querySelectorAll('.landing-header,.role-cards').forEach(function(e){e.style.display='none'});
 }
 function goHome(){go('home');}
+function backToLanding(){
+  /* 返回入口选择页（保留角色记忆用于高亮，重新选择后进入） */
+  document.getElementById('app').style.display='none';
+  document.getElementById('landing').style.display='flex';
+  var ps=document.getElementById('postSelect');
+  if(ps)ps.style.display='none';
+  document.querySelectorAll('.landing-header, .role-cards').forEach(function(e){e.style.display='';});
+  location.hash='#/';
+  /* 高亮上次选择的角色 */
+  document.querySelectorAll('.role-card').forEach(function(c){
+    c.style.outline='';
+    var m=c.getAttribute('onclick').match(/'(\w+)'/);
+    if(m&&m[1]===CURRENT_ROLE){c.style.outline='2px solid var(--m-primary)';c.style.outlineOffset='2px';}
+  });
+}
 function go(h){location.hash='#/'+h.replace(/^\//,'');}
 function goBack(){
   var h=location.hash.replace('#/','')||'home';

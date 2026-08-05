@@ -98,6 +98,21 @@ function switchPostFromApp(){
   document.querySelectorAll('.landing-header,.role-cards').forEach(function(e){e.style.display='none'});
 }
 function goHome(){go('home');}
+function backToLanding(){
+  /* 返回入口选择页（保留角色记忆用于高亮，重新选择后进入） */
+  document.getElementById('app').style.display='none';
+  document.getElementById('landing').style.display='flex';
+  var ps=document.getElementById('postSelect');
+  if(ps)ps.style.display='none';
+  document.querySelectorAll('.landing-header, .role-cards').forEach(function(e){e.style.display='';});
+  location.hash='#/';
+  /* 高亮上次选择的角色 */
+  document.querySelectorAll('.role-card').forEach(function(c){
+    c.style.outline='';
+    var m=c.getAttribute('onclick').match(/'(\w+)'/);
+    if(m&&m[1]===CURRENT_ROLE){c.style.outline='2px solid var(--m-primary)';c.style.outlineOffset='2px';}
+  });
+}
 function go(h){location.hash='#/'+h.replace(/^\//,'');}
 function goBack(){
   var h=location.hash.replace('#/','')||'home';
